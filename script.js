@@ -261,11 +261,19 @@ const advancedToggle = document.getElementById("advanced-toggle");
 const advancedOptionsDiv = document.getElementById("advanced-options");
 
 advancedToggle.addEventListener("click", () => {
-	const isHidden = advancedOptionsDiv.style.display === "none";
-	advancedOptionsDiv.style.display = isHidden ? "block" : "none";
-	advancedToggle.textContent = isHidden
-		? "Advanced Options ▲"
-		: "Advanced Options ▼";
+	const isHidden =
+		window.getComputedStyle(advancedOptionsDiv).display === "none";
+
+	if (isHidden) {
+		advancedOptionsDiv.style.display = "block";
+		advancedOptionsDiv.offsetHeight;
+		advancedOptionsDiv.classList.add("show");
+		advancedToggle.textContent = "Advanced Options ▲";
+	} else {
+		advancedOptionsDiv.classList.remove("show");
+		advancedOptionsDiv.style.display = "none";
+		advancedToggle.textContent = "Advanced Options ▼";
+	}
 });
 
 // Show duration in (d h m s) format
@@ -428,6 +436,7 @@ const handleClear = () => {
 	resultsArea.style.display = "none";
 	// Reset advanced options visibility if needed
 	advancedOptionsDiv.style.display = "none";
+	advancedOptionsDiv.classList.remove("show");
 	advancedToggle.textContent = "Advanced Options ▼";
 };
 
