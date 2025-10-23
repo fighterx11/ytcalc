@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>YT Playlist Length Calculator (Simple Version)</title>
+		<link rel="stylesheet" href="style.css" />
+	</head>
+	<body>
+		<header class="container">
+			<h1>YouTube Playlist Length Calculator</h1>
+			<p>Calculate total watch time of any YouTube playlist.</p>
+		</header>
+
+		<main class="container">
+			<div>
+				<label for="playlist-url">YouTube Playlist URL or ID</label>
+				<div class="input-group">
+					<input
+						type="text"
+						id="playlist-url"
+						placeholder="Paste playlist URL or ID..."
+					/>
+					<button id="calculate-button">Calculate</button>
+				</div>
+			</div>
+
+			<span id="advanced-toggle">Advanced Options ▼</span>
+			<div id="advanced-options">
+				<div class="range-inputs">
+					<div>
+						<label for="from-video">From Video #</label>
+						<input
+							type="number"
+							id="from-video"
+							placeholder="1"
+							min="1"
+						/>
+					</div>
+					<div>
+						<label for="to-video">To Video #</label>
+						<input
+							type="number"
+							id="to-video"
+							placeholder="Last video"
+							min="1"
+						/>
+					</div>
+				</div>
+			</div>
+
+			<div>
+				<button id="clear-button">Clear All</button>
+			</div>
+
+			<div id="loading-message">Calculating... Please wait...</div>
+			<div id="error-message"></div>
+
+			<div id="results-area" style="display: none">
+				<div class="results-card">
+					<h3>Playlist Information</h3>
+					<p>
+						<strong>Title:</strong>
+						<span id="playlist-title"></span>
+					</p>
+					<p>
+						<strong>Channel:</strong>
+						<span id="playlist-channel"></span>
+					</p>
+					<div class="results-grid">
+						<div class="result-item">
+							<span class="label">Videos in Range</span>
+							<span class="value" id="video-count"></span>
+						</div>
+						<div class="result-item">
+							<span class="label">Total Duration (1x)</span>
+							<span class="value" id="total-duration"></span>
+						</div>
+						<div class="result-item">
+							<span class="label">Avg. Length</span>
+							<span class="value" id="average-duration"></span>
+						</div>
+						<div class="result-item">
+							<span class="label">Range Applied</span>
+							<span class="value" id="range-applied"></span>
+						</div>
+					</div>
+				</div>
+
+				<div class="results-card">
+					<h3>Durations at Different Speeds</h3>
+					<div class="results-grid">
+						<div class="result-item">
+							<span class="label">0.75x Speed</span>
+							<span class="value" id="duration-075x"></span>
+						</div>
+						<div class="result-item">
+							<span class="label">1.25x Speed</span>
+							<span class="value" id="duration-125x"></span>
+						</div>
+						<div class="result-item">
+							<span class="label">1.5x Speed</span>
+							<span class="value" id="duration-150x"></span>
+						</div>
+						<div class="result-item">
+							<span class="label">2x Speed</span>
+							<span class="value" id="duration-200x"></span>
+						</div>
+					</div>
+				</div>
+
+				<div
+					class="results-card"
+					id="start-end-videos"
+					style="display: none"
+				>
+					<h3>Range Details</h3>
+					<div class="results-grid">
+						<div class="result-item">
+							<span class="label">Starting Video</span>
+							<span class="value" id="start-video-title"></span>
+							<a
+								id="start-video-link"
+								href="#"
+								target="_blank"
+								rel="noopener noreferrer"
+								style="font-size: 0.8em; color: #ff8888"
+								>Watch</a
+							>
+						</div>
+						<div class="result-item">
+							<span class="label">Ending Video</span>
+							<span class="value" id="end-video-title"></span>
+							<a
+								id="end-video-link"
+								href="#"
+								target="_blank"
+								rel="noopener noreferrer"
+								style="font-size: 0.8em; color: #ff8888"
+								>Watch</a
+							>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+
+		<footer class="container">
+			<p>
+				Built with HTML, CSS, JS. |
+				<a
+					href="https://developers.google.com/youtube/v3/getting-started"
+					target="_blank"
+					rel="noopener noreferrer"
+					>Uses YouTube Data API v3</a
+				>
+			</p>
+		</footer>
+
+		<script src="script.js"></script>
+	</body>
+</html>
