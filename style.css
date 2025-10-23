@@ -178,3 +178,27 @@ footer a:hover {
 	display: inline-block;
 	margin-bottom: 15px;
 }
+
+/* Video thumbnail styling */
+.video-thumbnail {
+	width: 100%;
+	max-width: 200px;
+	height: auto;
+	border-radius: 4px;
+	margin: 10px 0;
+	display: block;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.video-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+}
+
+.video-item .value {
+	margin-top: 10px;
+	font-size: 0.9em;
+	line-height: 1.3;
+}

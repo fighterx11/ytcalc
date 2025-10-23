@@ -114,6 +114,7 @@ const fetchVideoDetails = async (videoIds) => {
 			title: item.snippet.title,
 			duration: parseDuration(item.contentDetails.duration),
 			position: originalIndices[item.id] + 1, // Use original index + 1
+			thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
 		}));
 
 		videos.push(...batchVideos);
@@ -250,8 +251,10 @@ const duration200xEl = document.getElementById("duration-200x");
 const startEndVideosEl = document.getElementById("start-end-videos");
 const startVideoTitleEl = document.getElementById("start-video-title");
 const startVideoLinkEl = document.getElementById("start-video-link");
+const startVideoThumbnailEl = document.getElementById("start-video-thumbnail");
 const endVideoTitleEl = document.getElementById("end-video-title");
 const endVideoLinkEl = document.getElementById("end-video-link");
+const endVideoThumbnailEl = document.getElementById("end-video-thumbnail");
 
 // Advanced options toggle
 const advancedToggle = document.getElementById("advanced-toggle");
@@ -391,8 +394,14 @@ const handleCalculate = async () => {
 				// Only show if range was applied and videos exist
 				startVideoTitleEl.textContent = `#${data.range.from}: ${startVideo.title}`;
 				startVideoLinkEl.href = `https://www.youtube.com/watch?v=${startVideo.id}&list=${data.id}&index=${data.range.from}`;
+				startVideoThumbnailEl.src = startVideo.thumbnail || "";
+				startVideoThumbnailEl.alt = `Thumbnail for: ${startVideo.title}`;
+
 				endVideoTitleEl.textContent = `#${data.range.to}: ${endVideo.title}`;
 				endVideoLinkEl.href = `https://www.youtube.com/watch?v=${endVideo.id}&list=${data.id}&index=${data.range.to}`;
+				endVideoThumbnailEl.src = endVideo.thumbnail || "";
+				endVideoThumbnailEl.alt = `Thumbnail for: ${endVideo.title}`;
+
 				startEndVideosEl.style.display = "block";
 			} else {
 				startEndVideosEl.style.display = "none";
