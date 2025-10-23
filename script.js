@@ -120,7 +120,6 @@ const showError = (message) => {
 const showLoading = (isLoading) => {
 	loadingMessage.style.display = isLoading ? "block" : "none";
 	calculateButton.disabled = isLoading;
-	errorMessageDiv.style.display = "none"; // Hide error when loading starts
 	if (isLoading) {
 		resultsArea.style.display = "none"; // Hide previous results when loading
 	}
