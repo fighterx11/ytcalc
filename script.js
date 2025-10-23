@@ -1,228 +1,26 @@
-// --- YouTube API Logic ---
-//const YOUTUBE_API_KEY = "YOUR_YOUTUBE_API_KEY"; // <-- IMPORTANT: Enter your API Key here!
-const YOUTUBE_API_KEY = "AIzaSyA8L0hHiGdjUR_gdbooGNf9i9gpyxoewLk";
-const YOUTUBE_API_BASE_URL = "https://www.googleapis.com/youtube/v3";
+// --- Backend API Logic ---
+const API_BASE_URL = window.location.origin; // Use same origin as the frontend
 
-// Convert ISO 8601 duration into seconds
-const parseDuration = (duration) => {
-	const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-	if (!match) return 0;
-	const hours = parseInt(match[1] || "0", 10);
-	const minutes = parseInt(match[2] || "0", 10);
-	const seconds = parseInt(match[3] || "0", 10);
-	return hours * 3600 + minutes * 60 + seconds;
-};
-
-// Fetch playlist ID from url
-const extractPlaylistId = (url) => {
-	if (/^[A-Za-z0-9_-]{34}$/.test(url)) {
-		// Direct ID check
-		return url;
-	}
-	const patterns = [
-		/[&?]list=([^&]+)/,
-		/playlist\?list=([^&]+)/,
-		/embed\/videoseries\?list=([^&]+)/,
-	];
-	for (const pattern of patterns) {
-		const match = url.match(pattern);
-		if (match) return match[1];
-	}
-	return null;
-};
-
-// Fetch basic playlist info
-const fetchPlaylistInfo = async (playlistId) => {
-	if (!YOUTUBE_API_KEY || YOUTUBE_API_KEY === "YOUR_YOUTUBE_API_KEY") {
-		throw new Error(
-			"YouTube API Key missing! Please add it in the script."
-		);
-	}
-	const response = await fetch(
-		`${YOUTUBE_API_BASE_URL}/playlists?part=snippet,contentDetails&id=${playlistId}&key=${YOUTUBE_API_KEY}`
-	);
-	if (!response.ok) {
-		const errorData = await response.json();
-		console.error("API Error (Playlist Info):", errorData);
-		throw new Error(
-			`Failed to fetch playlist info (Status: ${response.status}). Check console for details.`
-		);
-	}
-	const data = await response.json();
-	if (data.items.length === 0) {
-		throw new Error("Playlist not found or is private.");
-	}
-	return data.items[0];
-};
-
-// Playlist ke saare video IDs fetch karna (pages handle karke)
-const fetchPlaylistVideos = async (playlistId) => {
-	const videoIds = [];
-	let nextPageToken = "";
-	do {
-		const response = await fetch(
-			`${YOUTUBE_API_BASE_URL}/playlistItems?part=contentDetails&playlistId=${playlistId}&maxResults=50&pageToken=${nextPageToken}&key=${YOUTUBE_API_KEY}`
-		);
-		if (!response.ok) {
-			const errorData = await response.json();
-			console.error("API Error (Playlist Items):", errorData);
-			throw new Error(
-				`Failed to fetch playlist videos (Status: ${response.status}). Check console.`
-			);
-		}
-		const data = await response.json();
-		// Filter out videos that might be deleted or private after being added
-		data.items.forEach((item) => {
-			if (item.contentDetails && item.contentDetails.videoId) {
-				videoIds.push(item.contentDetails.videoId);
-			} else {
-				console.warn("Skipping item without videoId:", item);
-			}
-		});
-		nextPageToken = data.nextPageToken || "";
-	} while (nextPageToken);
-	return videoIds;
-};
-
-// Video details (duration, title) fetch karna batches mein
-const fetchVideoDetails = async (videoIds) => {
-	const videos = [];
-	const batchSize = 50;
-	const originalIndices = {}; // Store original index for sorting later
-	videoIds.forEach((id, index) => {
-		originalIndices[id] = index;
+// Fetch playlist data from backend
+const fetchPlaylistData = async (playlistUrl, fromVideoNum, toVideoNum) => {
+	const response = await fetch(`${API_BASE_URL}/api/playlist`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({
+			playlistUrl,
+			fromVideoNum,
+			toVideoNum
+		})
 	});
 
-	for (let i = 0; i < videoIds.length; i += batchSize) {
-		const batch = videoIds.slice(i, i + batchSize);
-		const response = await fetch(
-			`${YOUTUBE_API_BASE_URL}/videos?part=snippet,contentDetails&id=${batch.join(
-				","
-			)}&key=${YOUTUBE_API_KEY}`
-		);
-		if (!response.ok) {
-			const errorData = await response.json();
-			console.error("API Error (Video Details):", errorData);
-			throw new Error(
-				`Failed to fetch video details (Status: ${response.status}). Check console.`
-			);
-		}
-		const data = await response.json();
-
-		const batchVideos = data.items.map((item) => ({
-			id: item.id,
-			title: item.snippet.title,
-			duration: parseDuration(item.contentDetails.duration),
-			position: originalIndices[item.id] + 1, // Use original index + 1
-			thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
-		}));
-
-		videos.push(...batchVideos);
-	}
-	// Ensure the videos are in the original playlist order
-	videos.sort((a, b) => a.position - b.position);
-	return videos;
-};
-
-// Main function jo sab fetch karke data laata hai
-const fetchPlaylistData = async (playlistUrl, fromVideoNum, toVideoNum) => {
-	const playlistId = extractPlaylistId(playlistUrl);
-	if (!playlistId) {
-		throw new Error("Invalid YouTube playlist URL or ID.");
+	if (!response.ok) {
+		const errorData = await response.json();
+		throw new Error(errorData.error || `Server error: ${response.status}`);
 	}
 
-	try {
-		const playlistInfo = await fetchPlaylistInfo(playlistId);
-		const allVideoIds = await fetchPlaylistVideos(playlistId);
-
-		if (allVideoIds.length === 0) {
-			// Check if playlist itself reported 0 items
-			if (playlistInfo.contentDetails.itemCount === 0) {
-				return {
-					// Return minimal info for empty playlist
-					id: playlistId,
-					title: playlistInfo.snippet.title,
-					channelTitle: playlistInfo.snippet.channelTitle,
-					videoCount: 0,
-					actualVideoCount: 0,
-					videos: [],
-					range: undefined,
-				};
-			} else {
-				// API might have issues listing items, but playlist claims items exist
-				throw new Error(
-					"Found 0 videos via API, but playlist might not be empty. Check permissions or try again."
-				);
-			}
-		}
-
-		const totalReportedCount = allVideoIds.length; // Count before filtering
-
-		let selectedVideoIds = allVideoIds;
-		let range = undefined;
-
-		// Validate and apply range
-		const from = fromVideoNum ? parseInt(fromVideoNum, 10) : 1;
-		const to = toVideoNum ? parseInt(toVideoNum, 10) : totalReportedCount;
-
-		if (
-			isNaN(from) ||
-			isNaN(to) ||
-			from < 1 ||
-			to < 1 ||
-			from > totalReportedCount ||
-			to > totalReportedCount ||
-			from > to
-		) {
-			// Only throw error if user provided invalid input, not if fields were empty
-			if (fromVideoNum || toVideoNum) {
-				throw new Error(
-					`Invalid video range. Playlist has ${totalReportedCount} videos.`
-				);
-			}
-			// If fields were empty, use default full range
-			selectedVideoIds = allVideoIds;
-			range = { from: 1, to: totalReportedCount };
-		} else {
-			// Valid range provided or default full range used
-			selectedVideoIds = allVideoIds.slice(from - 1, to);
-			range = { from: from, to: to };
-		}
-
-		if (selectedVideoIds.length === 0 && (fromVideoNum || toVideoNum)) {
-			throw new Error("No videos found in the specified range.");
-		} else if (selectedVideoIds.length === 0) {
-			// This case should ideally be caught earlier, but added for safety
-			throw new Error("No videos selected to fetch details.");
-		}
-
-		const videos = await fetchVideoDetails(selectedVideoIds);
-
-		return {
-			id: playlistId,
-			title: playlistInfo.snippet.title,
-			channelTitle: playlistInfo.snippet.channelTitle,
-			videoCount: totalReportedCount, // Total videos before range filter
-			actualVideoCount: videos.length, // Videos actually processed
-			videos: videos,
-			range: range,
-		};
-	} catch (error) {
-		console.error("Error in fetchPlaylistData:", error);
-		// Re-throw specific errors or a generic one
-		if (
-			error instanceof Error &&
-			(error.message.includes("API Key") ||
-				error.message.includes("not found") ||
-				error.message.includes("Invalid") ||
-				error.message.includes("range"))
-		) {
-			throw error; // Let specific errors pass through
-		}
-		throw new Error(
-			"Failed to fetch playlist data. Check URL/ID, API Key, and permissions."
-		);
-	}
+	return await response.json();
 };
 
 // --- UI Logic ---
@@ -332,12 +130,6 @@ const handleCalculate = async () => {
 
 	if (!playlistUrl) {
 		showError("Please enter a YouTube playlist URL or ID.");
-		return;
-	}
-
-	const playlistId = extractPlaylistId(playlistUrl);
-	if (!playlistId) {
-		showError("Please enter a valid YouTube playlist URL or ID.");
 		return;
 	}
 
