@@ -17,7 +17,11 @@ const fetchPlaylistData = async (playlistUrl, fromVideoNum, toVideoNum) => {
 
 	if (!response.ok) {
 		const errorData = await response.json();
-		throw new Error(errorData.error || `Server error: ${response.status}`);
+		const errorMessage =
+			errorData.error || `Server error: ${response.status}`;
+		console.error("Backend error:", errorMessage);
+		showError(errorMessage);
+		throw new Error(errorMessage);
 	}
 
 	return await response.json();
